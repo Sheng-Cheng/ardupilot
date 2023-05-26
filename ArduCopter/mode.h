@@ -39,6 +39,7 @@ public:
         AUTOROTATE =   26,  // Autonomous autorotation
         AUTO_RTL =     27,  // Auto RTL, this is not a true mode, AUTO will report as this mode if entered to perform a DO_LAND_START Landing sequence
         TURTLE =       28,  // Flip over after crash
+        ADAPTIVE =     29, // adaptive control
 
         // Mode number 127 reserved for the "drone show mode" in the Skybrush
         // fork at https://github.com/skybrush-io/ardupilot
@@ -1921,3 +1922,85 @@ private:
 
 };
 #endif
+
+class ModeAdaptive : public Mode
+{
+public:
+    // inherit constructor
+    using Mode::Mode;
+
+    Number mode_number() const override { return Number::ADAPTIVE; }
+
+    bool init(bool ignore_checks) override;
+    virtual void run() override;
+
+    bool requires_GPS() const override { return false; }
+    bool has_manual_throttle() const override { return true; }
+    bool allows_arming(AP_Arming::Method method) const override { return true; };
+    bool is_autopilot() const override { return false; }
+    bool allows_save_trim() const override { return true; }
+    bool allows_autotune() const override { return true; }
+    bool allows_flip() const override { return true; }
+
+    const float GRAVITY_MAGNITUDE = 9.8; // gravitational acceleration
+
+    #if (!REAL_OR_SITL) // SITL
+        const float kg_vehicleMass = 3; // SITL drone mass.    
+        const Matrix3f J = {0.023, 0, 0, 0, 0.023, 0, 0, 0, 0.0459}; // This is pulled from SIM_Motor.cpp
+        const Matrix3f Jinv = {43.478, 0, 0, 0, 43.478, 0, 0, 0, 21.786}; // hand-computed
+    #elif (REAL_OR_SITL) // Real 
+        const float kg_vehicleMass = 0.62;   // weight for the real drone
+        const Matrix3f J = {0.002016, 0, 0, 0, 0.001827, 0, 0, 0, 0.00322}; // This is from CAD model of the real drone
+        const Matrix3f Jinv = {496.03, 0, 0, 0, 547.345, 0, 0, 0, 310.559}; // hand-computed
+    #endif
+
+    Vector3f v_prev; // storage of previous step linear velocity
+    Vector3f omega_prev; // storage of previous step angular velocity
+    Matrix3f R_prev; // storage of previous rotational matrix
+    VectorN<float,4> u_b_prev; // storage of previous step u_baseline
+
+    Vector3f v_hat_prev; // state predictor value of translational speed at previous sample time
+    Vector3f omega_hat_prev; // state predictor value of rotational speed at previous sample time
+
+    VectorN<float,4> u_ad_prev; // previously stored adaptive control
+    VectorN<float,4> sigma_m_hat_prev; // previously stored estimated matched uncertainty
+    VectorN<float,4> lpf1_prev; // previously stored state in the 1st low-pass filter
+    VectorN<float,4> lpf2_prev; // previously stored state in the 2nd low-pass filter
+    Vector2f sigma_um_hat_prev; // previously stored estimated unmatched uncertainty
+
+    float radiusX;  // circle radius or figure8's x radius
+    float radiusY;  // figure8's y radius (not used for circle radius)
+    int8_t trajIndex; // index of the trajectory
+    int8_t motorEnable; // whether to raise motor PWM
+    float targetSpeed; // target speed of the trajectory
+
+    // the variables below are defined for the landing procedure
+    uint8_t landingTriggered; // indicator of whether a landing command has been triggered (via setting g2.landingFlag to 1)
+    Vector3f currentPosition; // storing the current position of the vehicle (NED in meters)
+    Vector3f currentVelocity; // storing the current velocity of the vehicle (NED in meters per second)
+    float currentYaw; // storing the current yaw angle of the vehicle
+    float landingTimeOffset; // store the time when the land command is triggered
+    uint8_t landingComplete; // indicator of whether landing is completed
+
+protected:
+    const char *name() const override { return "ADAPTIVE"; }
+    const char *name4() const override { return "ADPT"; }
+    // The name() and name4() methods are for logging and display purposes.
+
+private:
+    VectorN<float, 4> geometricController(Vector3f targetPos,
+                                                    Vector3f targetVel,
+                                                    Vector3f targetAcc,
+                                                    Vector3f targetJerk,
+                                                    Vector3f targetSnap,
+                                                    Vector2f targetYaw,
+                                                    Vector2f targetYaw_dot,
+                                                    Vector2f targetYaw_ddot);
+    VectorN<float, 4> L1AdaptiveAugmentation(VectorN<float, 4> thrustMomentCmd);
+    VectorN<float,9> unit_vec(Vector3f q, Vector3f q_dot, Vector3f q_ddot);
+    Matrix3f hatOperator(Vector3f input);
+    Vector3f veeOperator(Matrix3f input);
+    VectorN<float,4> motorMixing(VectorN<float,4> thrustMomentCmd);
+    VectorN<float,4> iterativeMotorMixing(VectorN<float, 4> w_input, VectorN<float, 4> thrustMomentCmd, float a_F, float b_F, float a_M, float b_M, float L, float D);
+    VectorN<float,16> mat4Inv(VectorN<float,4> coefficientRow1, VectorN<float,4> coefficientRow2, VectorN<float,4> coefficientRow3, VectorN<float,4> coefficientRow4);
+};
