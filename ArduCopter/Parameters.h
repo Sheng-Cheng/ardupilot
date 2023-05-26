@@ -332,15 +332,25 @@ public:
         // 210: Waypoint data
         //
         k_param_waypoint_mode = 210, // remove
-        k_param_command_total,       // remove
-        k_param_command_index,       // remove
-        k_param_command_nav_index,   // remove
-        k_param_waypoint_radius,     // remove
+        // The following few lines are removed and instead used for As in the L1 adaptive controller
+        // k_param_command_total,       // remove
+        // k_param_command_index,       // remove
+        k_param_Asv,  // As for the velocity state
+        k_param_Asomega,  // As for the rotational velocity state
+        // The following few lines are removed and instead used for LPF1's cutoff frequency
+        // k_param_command_nav_index,   // remove
+        // k_param_waypoint_radius,     // remove
+        k_param_ctoffq1Thrust,  // LPF1's cutoff frequency for thrust channel
+        k_param_ctoffq1Moment,  // LPF1's cutoff frequency for moment channel
         k_param_circle_radius,       // remove
         k_param_waypoint_speed_max,  // remove
         k_param_land_speed,
-        k_param_auto_velocity_z_min, // remove
-        k_param_auto_velocity_z_max, // remove - 219
+        // The following few lines are removed and instead used for the circular trajectories rate
+        // k_param_auto_velocity_z_min, // remove
+        k_param_circSpeed, // circulating speed of the circular trajectory
+        // The following few lines are removed and intead used for LPF2's cutoff frequency
+        // k_param_auto_velocity_z_max, // remove - 219
+        k_param_ctoffq2Moment, // LPF2's cutoff frequency for moment channel
         k_param_land_speed_high,
 
         //
@@ -355,22 +365,49 @@ public:
         k_param_p_stabilize_pitch,  // remove
         k_param_p_stabilize_yaw,    // remove
         k_param_p_pos_xy,           // remove
-        k_param_p_loiter_lon,       // remove
-        k_param_pid_loiter_rate_lat,    // remove
-        k_param_pid_loiter_rate_lon,    // remove
-        k_param_pid_nav_lat,        // remove
-        k_param_pid_nav_lon,        // remove
-        k_param_p_alt_hold,             // remove
-        k_param_p_vel_z,                // remove
-        k_param_pid_optflow_roll,       // remove
-        k_param_pid_optflow_pitch,      // remove
-        k_param_acro_balance_roll_old,  // remove
-        k_param_acro_balance_pitch_old, // remove
-        k_param_pid_accel_z,            // remove
+        // The following few lines are removed and instead used for geometric controller tuning
+        // k_param_p_loiter_lon,       // remove
+        // k_param_pid_loiter_rate_lat,    // remove
+        // k_param_pid_loiter_rate_lon,    // remove
+        // k_param_pid_nav_lat,        // remove
+        // k_param_pid_nav_lon,        // remove
+        // k_param_p_alt_hold,             // remove
+        // k_param_p_vel_z,                // remove
+        // k_param_pid_optflow_roll,       // remove
+        // k_param_pid_optflow_pitch,      // remove
+        // k_param_acro_balance_roll_old,  // remove
+        // k_param_acro_balance_pitch_old, // remove
+        // k_param_pid_accel_z,            // remove
+        // Begin the new parameters
+        // position P term
+        k_param_GeoCtrl_Kpx = 230, // kpx for geometric controller
+        k_param_GeoCtrl_Kpy,       // kpy for geometric controller
+        k_param_GeoCtrl_Kpz,       // kpz for geometric controller
+
+        // position D term
+        k_param_GeoCtrl_Kvx,       // kvx for geometric controller
+        k_param_GeoCtrl_Kvy,       // kvy for geometric controller
+        k_param_GeoCtrl_Kvz,       // kvz for geometric controller
+
+        // angular P term
+        k_param_GeoCtrl_KRx = 236, // kRx for geometric controller
+        k_param_GeoCtrl_KRy,       // kRy for geometric controller
+        k_param_GeoCtrl_KRz,       // kRz for geometric controller
+
+        // angular D term
+        k_param_GeoCtrl_KOx,       // kOmegax for geometric controller
+        k_param_GeoCtrl_KOy,       // kOmegay for geometric controller
+        k_param_GeoCtrl_KOz = 241, // kOmegaz for geometric controller
+
         k_param_acro_balance_roll,
         k_param_acro_balance_pitch,
         k_param_acro_yaw_p,             // remove
-        k_param_autotune_axis_bitmask, // remove
+
+        // the following line is removed and instead used for L1 enable
+        // k_param_autotune_axis_bitmask, // remove
+        k_param_l1enable, // enable switch for L1 adaptive controller
+        // k_param_cutoffFreq, // [obsolete] cutoff frequency for the LPF in the L1 adaptive controller (in rad/s)
+
         k_param_autotune_aggressiveness, // remove
         k_param_pi_vel_xy,              // remove
         k_param_fs_ekf_action,
@@ -472,6 +509,29 @@ public:
     AP_Float                acro_balance_roll;
     AP_Float                acro_balance_pitch;
 #endif
+
+// ACRL: added for geometric controller tuning
+AP_Float GeoCtrl_Kpx; // kpx for geometric controller
+AP_Float GeoCtrl_Kpy; // kpy for geometric controller
+AP_Float GeoCtrl_Kpz; // kpz for geometric controllerF
+AP_Float GeoCtrl_Kvx; // kvx for geometric controller
+AP_Float GeoCtrl_Kvy; // kvy for geometric controller
+AP_Float GeoCtrl_Kvz; // kvz for geometric controllerF
+AP_Float GeoCtrl_KRx; // kRx for geometric controller
+AP_Float GeoCtrl_KRy; // kRy for geometric controller
+AP_Float GeoCtrl_KRz; // kRz for geometric controllerF
+AP_Float GeoCtrl_KOx; // kOmegax for geometric controller
+AP_Float GeoCtrl_KOy; // kOmegay for geometric controller
+AP_Float GeoCtrl_KOz; // kOmegaz for geometric controller
+AP_Int8 l1enable; // enabling switch for L1 adaptive controller
+
+AP_Float Asv;  // As for the velocity state
+AP_Float Asomega;  // As for the rotational velocity state
+AP_Float ctoffq1Thrust;  // LPF1's cutoff frequency for thrust channel
+AP_Float ctoffq1Moment;  // LPF1's cutoff frequency for moment channel
+AP_Float ctoffq2Moment;  // LPF2's cutoff frequency for moment channel
+
+AP_Float circSpeed; // speed for the circular trajectory
 
 #if MODE_ACRO_ENABLED == ENABLED
     // Acro parameters
@@ -669,6 +729,14 @@ public:
 
 #if MODE_GUIDED_ENABLED == ENABLED
     AP_Float guided_timeout;
+#endif
+
+// parameters for the ACRL trajectories 
+#if MODE_ADAPTIVE_ENABLED == ENABLED
+    AP_Float circRadiusX; // circle radius or figure8's x radius
+    AP_Float circRadiusY; // figure8's y radius (not used for circle radius)
+    AP_Int8 trajIndex; // index of the trajectory to run
+    AP_Int8 LandFlag; // flag of landing
 #endif
 
     AP_Int8                 surftrak_mode;
