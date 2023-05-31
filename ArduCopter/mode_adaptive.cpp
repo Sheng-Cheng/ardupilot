@@ -28,7 +28,7 @@ bool ModeAdaptive::init(bool ignore_checks)
 
     if (ahrs.have_inertial_nav())
     {
-        ahrs.get_velocity_NED(v_hat_prev); // state predictor value of translational speed
+        if(ahrs.get_velocity_NED(v_hat_prev)){;} // state predictor value of translational speed
         v_prev = v_hat_prev;               // initialize the previous velocity in the same way
     }
     else
@@ -236,8 +236,8 @@ void ModeAdaptive::run()
     // executing landing mode
     if (g2.LandFlag && landingTriggered) // switch to landing mode
     {   
-        ahrs.get_relative_position_NED_origin(currentPosition);// save current position
-        ahrs.get_velocity_NED(currentVelocity);
+        if(ahrs.get_relative_position_NED_origin(currentPosition)){;}// save current position
+        if(ahrs.get_velocity_NED(currentVelocity)){;}
         currentYaw = ahrs.get_yaw(); // save current yaw
         if (currentPosition[2] >= -0.3) // if the initial altitude upon entering land mode is within 30 cm, then set landComplete to 1 to overwrite the motor throttle to 1.
         {   
@@ -374,7 +374,7 @@ VectorN<float, 4> ModeAdaptive::geometricController(Vector3f targetPos,
     // order. Check if have_inertial_nav() is true before assigning values to stateVel.
     if (ahrs.have_inertial_nav())
     {
-        ahrs.get_velocity_NED(stateVel);
+        if(ahrs.get_velocity_NED(stateVel)){;}
     }
     else
     {
@@ -573,7 +573,7 @@ VectorN<float, 4> ModeAdaptive::L1AdaptiveAugmentation(VectorN<float, 4> thrustM
     Vector3f v_now;
     if (ahrs.have_inertial_nav())
     {
-        ahrs.get_velocity_NED(v_now); // state predictor value of translational speed
+        if(ahrs.get_velocity_NED(v_now)){;} // state predictor value of translational speed
     }
     else
     {
