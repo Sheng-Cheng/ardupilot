@@ -118,9 +118,9 @@ private:
         // MOT_PWM_MAX
         float pwmMax = 2000;
         // MOT_SPIN_MIN
-        float spin_min = 0.05; // 0.15
+        float spin_min = 0.15;
         // MOT_SPIN_MAX
-        float spin_max = 1.00; // 0.95
+        float spin_max = 0.95;
 
         // maximum slew rate of motors
         float slew_max = 150;

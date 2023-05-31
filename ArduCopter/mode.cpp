@@ -175,12 +175,6 @@ Mode *Copter::mode_from_mode_num(const Mode::Number mode)
             break;
 #endif
 
-#if MODE_ADAPTIVE_ENABLED == ENABLED
-        case Mode::Number::ADAPTIVE:
-            ret = &mode_adaptive;
-            break;
-#endif
-
         default:
             break;
     }
