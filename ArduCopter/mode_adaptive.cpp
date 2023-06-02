@@ -28,7 +28,7 @@ bool ModeAdaptive::init(bool ignore_checks)
 
     if (ahrs.have_inertial_nav())
     {
-        ahrs.get_velocity_NED(v_hat_prev); // state predictor value of translational speed
+        if(ahrs.get_velocity_NED(v_hat_prev)){;} // state predictor value of translational speed
         v_prev = v_hat_prev;               // initialize the previous velocity in the same way
     }
     else
@@ -56,11 +56,11 @@ bool ModeAdaptive::init(bool ignore_checks)
     lpf1_prev = lpf1_prev * 0; // initialize lpf1_prev
     lpf2_prev = lpf2_prev * 0; // initialize lpf2_prev
 
-    trajIndex = g2.trajIndex; // fix the trajectory
-    radiusX = g2.circRadiusX; // circle radius or figure8's x radius
-    radiusY = g2.circRadiusY; // figure8's y radius (not used for circle radius)
+    trajIndex = acrlctrl.trajIndex; // fix the trajectory
+    radiusX = acrlctrl.circRadiusX; // circle radius or figure8's x radius
+    radiusY = acrlctrl.circRadiusY; // figure8's y radius (not used for circle radius)
 
-    targetSpeed = g.circSpeed; // final tangent speed is read from the parameter circSpeed
+    targetSpeed = acrlctrl.circSpeed; // final tangent speed is read from the parameter circSpeed
 
     landingTriggered = 0; // set the indicator to 0  
 
@@ -227,17 +227,17 @@ void ModeAdaptive::run()
     }
 
     // initialize for landing mode
-    if (g2.LandFlag && !landingTriggered) 
+    if (acrlctrl.LandFlag && !landingTriggered) 
     {
         landingTriggered = 1; // set landingTriggered to 1
         landingTimeOffset = timeInThisRun; // store the time offset
     }
 
     // executing landing mode
-    if (g2.LandFlag && landingTriggered) // switch to landing mode
+    if (acrlctrl.LandFlag && landingTriggered) // switch to landing mode
     {   
-        ahrs.get_relative_position_NED_origin(currentPosition);// save current position
-        ahrs.get_velocity_NED(currentVelocity);
+        if(ahrs.get_relative_position_NED_origin(currentPosition)){;}// save current position
+        if(ahrs.get_velocity_NED(currentVelocity)){;}
         currentYaw = ahrs.get_yaw(); // save current yaw
         if (currentPosition[2] >= -0.3) // if the initial altitude upon entering land mode is within 30 cm, then set landComplete to 1 to overwrite the motor throttle to 1.
         {   
@@ -258,7 +258,7 @@ void ModeAdaptive::run()
     thrustMomentCmd = geometricController(targetPos, targetVel, targetAcc, targetJerk, targetSnap, targetYaw, targetYaw_dot, targetYaw_ddot); // only support constant yaw
 
     uint8_t LandFlag = 0;
-    LandFlag = g2.LandFlag;
+    LandFlag = acrlctrl.LandFlag;
     AP::logger().Write("L1AB", "thrust,mx,my,mz,landflag,landtrig,landcomp", "ffffBBB",
                        (double)thrustMomentCmd[0],
                        (double)thrustMomentCmd[1],
@@ -374,7 +374,7 @@ VectorN<float, 4> ModeAdaptive::geometricController(Vector3f targetPos,
     // order. Check if have_inertial_nav() is true before assigning values to stateVel.
     if (ahrs.have_inertial_nav())
     {
-        ahrs.get_velocity_NED(stateVel);
+        if(ahrs.get_velocity_NED(stateVel)){;}
     }
     else
     {
@@ -388,9 +388,9 @@ VectorN<float, 4> ModeAdaptive::geometricController(Vector3f targetPos,
     v_error = stateVel - targetVel;
 
     // Target force
-    target_force.x = kg_vehicleMass * targetAcc.x - g.GeoCtrl_Kpx * r_error.x - g.GeoCtrl_Kvx * v_error.x;
-    target_force.y = kg_vehicleMass * targetAcc.y - g.GeoCtrl_Kpy * r_error.y - g.GeoCtrl_Kvy * v_error.y;
-    target_force.z = kg_vehicleMass * (targetAcc.z - GRAVITY_MAGNITUDE) - g.GeoCtrl_Kpz * r_error.z - g.GeoCtrl_Kvz * v_error.z;
+    target_force.x = kg_vehicleMass * targetAcc.x - acrlctrl.GeoCtrl_Kpx * r_error.x - acrlctrl.GeoCtrl_Kvx * v_error.x;
+    target_force.y = kg_vehicleMass * targetAcc.y - acrlctrl.GeoCtrl_Kpy * r_error.y - acrlctrl.GeoCtrl_Kvy * v_error.y;
+    target_force.z = kg_vehicleMass * (targetAcc.z - GRAVITY_MAGNITUDE) - acrlctrl.GeoCtrl_Kpz * r_error.z - acrlctrl.GeoCtrl_Kvz * v_error.z;
 
     // Z-Axis [zB]
     Quaternion q;
@@ -438,9 +438,9 @@ VectorN<float, 4> ModeAdaptive::geometricController(Vector3f targetPos,
     a_error = e3 * GRAVITY_MAGNITUDE - R.colz() * target_thrust / kg_vehicleMass - targetAcc;
 
     Vector3f target_force_dot; // derivative of target_force
-    target_force_dot.x = -g.GeoCtrl_Kpx * v_error.x - g.GeoCtrl_Kvx * a_error.x + kg_vehicleMass * targetJerk.x;
-    target_force_dot.y = -g.GeoCtrl_Kpy * v_error.y - g.GeoCtrl_Kvy * a_error.y + kg_vehicleMass * targetJerk.y;
-    target_force_dot.z = -g.GeoCtrl_Kpz * v_error.z - g.GeoCtrl_Kvz * a_error.z + kg_vehicleMass * targetJerk.z;
+    target_force_dot.x = -acrlctrl.GeoCtrl_Kpx * v_error.x - acrlctrl.GeoCtrl_Kvx * a_error.x + kg_vehicleMass * targetJerk.x;
+    target_force_dot.y = -acrlctrl.GeoCtrl_Kpy * v_error.y - acrlctrl.GeoCtrl_Kvy * a_error.y + kg_vehicleMass * targetJerk.y;
+    target_force_dot.z = -acrlctrl.GeoCtrl_Kpz * v_error.z - acrlctrl.GeoCtrl_Kvz * a_error.z + kg_vehicleMass * targetJerk.z;
 
     Vector3f b3_dot = R * hatOperator(Omega) * e3;
 
@@ -450,9 +450,9 @@ VectorN<float, 4> ModeAdaptive::geometricController(Vector3f targetPos,
     j_error = -R.colz() * target_thrust_dot / kg_vehicleMass - b3_dot * target_thrust / kg_vehicleMass - targetJerk;
 
     Vector3f target_force_ddot; // derivative of target_force_dot
-    target_force_ddot.x = -g.GeoCtrl_Kpx * a_error.x - g.GeoCtrl_Kvx * j_error.x + kg_vehicleMass * targetSnap.x;
-    target_force_ddot.y = -g.GeoCtrl_Kpy * a_error.y - g.GeoCtrl_Kvy * j_error.y + kg_vehicleMass * targetSnap.y;
-    target_force_ddot.z = -g.GeoCtrl_Kpz * a_error.z - g.GeoCtrl_Kvz * j_error.z + kg_vehicleMass * targetSnap.z;
+    target_force_ddot.x = -acrlctrl.GeoCtrl_Kpx * a_error.x - acrlctrl.GeoCtrl_Kvx * j_error.x + kg_vehicleMass * targetSnap.x;
+    target_force_ddot.y = -acrlctrl.GeoCtrl_Kpy * a_error.y - acrlctrl.GeoCtrl_Kvy * j_error.y + kg_vehicleMass * targetSnap.y;
+    target_force_ddot.z = -acrlctrl.GeoCtrl_Kpz * a_error.z - acrlctrl.GeoCtrl_Kvz * j_error.z + kg_vehicleMass * targetSnap.z;
 
     VectorN<float, 9> b3cCollection;                                                // collection of three three-dimensional vectors b3c, b3c_dot, b3c_ddot
     b3cCollection = unit_vec(-target_force, -target_force_dot, -target_force_ddot); // unit_vec function is from geometric controller's git repo: https://github.com/fdcl-gwu/uav_geometric_control/blob/master/matlab/aux_functions/deriv_unit_vector.m
@@ -519,9 +519,9 @@ VectorN<float, 4> ModeAdaptive::geometricController(Vector3f targetPos,
     ew = Omega - R.transposed() * Rdes * Omegad;
 
     // Compute the moment
-    M.x = -g.GeoCtrl_KRx * eR.x - g.GeoCtrl_KOx * ew.x;
-    M.y = -g.GeoCtrl_KRy * eR.y - g.GeoCtrl_KOy * ew.y;
-    M.z = -g.GeoCtrl_KRz * eR.z - g.GeoCtrl_KOz * ew.z;
+    M.x = -acrlctrl.GeoCtrl_KRx * eR.x - acrlctrl.GeoCtrl_KOx * ew.x;
+    M.y = -acrlctrl.GeoCtrl_KRy * eR.y - acrlctrl.GeoCtrl_KOy * ew.y;
+    M.z = -acrlctrl.GeoCtrl_KRz * eR.z - acrlctrl.GeoCtrl_KOz * ew.z;
     M = M - J * (hatOperator(Omega) * R.transposed() * Rdes * Omegad - R.transposed() * Rdes * Omegad_dot);
     Vector3f momentAdd = Omega % (J * Omega); // J is the inertia matrix
     M = M + momentAdd;
@@ -567,21 +567,21 @@ VectorN<float, 4> ModeAdaptive::L1AdaptiveAugmentation(VectorN<float, 4> thrustM
 
     const float dt = 0.0025; // sampling time (update rate at 400 Hz)
 
-    int8_t l1enable = g.l1enable;
+    int8_t l1enable = acrlctrl.l1enable;
 
     // load translational velocity
     Vector3f v_now;
     if (ahrs.have_inertial_nav())
     {
-        ahrs.get_velocity_NED(v_now); // state predictor value of translational speed
+        if(ahrs.get_velocity_NED(v_now)){;} // state predictor value of translational speed
     }
     else
     {
         gcs().send_text(MAV_SEVERITY_CRITICAL, "inertial navigation is inactive in state predictor");
     }
     // coefficient for As
-    float As_v = g.Asv;         //
-    float As_omega = g.Asomega; //
+    float As_v = acrlctrl.Asv;         //
+    float As_omega = acrlctrl.Asomega; //
 
     // load rotational velocity
     Vector3f omega_now = AP::ahrs().get_gyro();
@@ -640,10 +640,10 @@ VectorN<float, 4> ModeAdaptive::L1AdaptiveAugmentation(VectorN<float, 4> thrustM
     sigma_um_hat_prev = sigma_um_hat;
 
     // compute lpf1 coefficients
-    float lpf1_coefficientThrust1 = expf(-g.ctoffq1Thrust * 0.0025);
+    float lpf1_coefficientThrust1 = expf(-acrlctrl.ctoffq1Thrust * 0.0025);
     float lpf1_coefficientThrust2 = 1.0 - lpf1_coefficientThrust1;
 
-    float lpf1_coefficientMoment1 = expf(-g.ctoffq1Moment * 0.0025);
+    float lpf1_coefficientMoment1 = expf(-acrlctrl.ctoffq1Moment * 0.0025);
     float lpf1_coefficientMoment2 = 1.0 - lpf1_coefficientMoment1;
 
     // update the adaptive control
@@ -658,7 +658,7 @@ VectorN<float, 4> ModeAdaptive::L1AdaptiveAugmentation(VectorN<float, 4> thrustM
 
     lpf1_prev = u_ad_int; // store the current state
 
-    float lpf2_coefficientMoment1 = expf(-g.ctoffq2Moment * 0.0025);
+    float lpf2_coefficientMoment1 = expf(-acrlctrl.ctoffq2Moment * 0.0025);
     float lpf2_coefficientMoment2 = 1.0 - lpf2_coefficientMoment1;
 
     // low-pass filter 2 (optional)

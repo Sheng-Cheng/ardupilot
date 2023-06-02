@@ -11,6 +11,7 @@
 Mode::Mode(void) :
     g(copter.g),
     g2(copter.g2),
+    acrlctrl(copter.acrlctrl),
     wp_nav(copter.wp_nav),
     loiter_nav(copter.loiter_nav),
     pos_control(copter.pos_control),

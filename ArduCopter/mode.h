@@ -5,6 +5,8 @@
 class Parameters;
 class ParametersG2;
 
+class ACRLctrl;
+
 class GCS_Copter;
 
 class Mode {
@@ -174,6 +176,7 @@ protected:
     // convenience references to avoid code churn in conversion:
     Parameters &g;
     ParametersG2 &g2;
+    ACRLctrl &acrlctrl;
     AC_WPNav *&wp_nav;
     AC_Loiter *&loiter_nav;
     AC_PosControl *&pos_control;

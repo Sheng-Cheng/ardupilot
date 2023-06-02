@@ -76,6 +76,7 @@
 // Configuration
 #include "defines.h"
 #include "config.h"
+#include "../libraries/AP_ACRLctrl/ACRLctrl.h"
 
 #if FRAME_CONFIG == HELI_FRAME
     #define AC_AttitudeControl_t AC_AttitudeControl_Heli
@@ -187,6 +188,7 @@ public:
     friend class AP_Rally_Copter;
     friend class Parameters;
     friend class ParametersG2;
+    friend class ACRLctrl;
     friend class AP_Avoidance_Copter;
 
 #if ADVANCED_FAILSAFE == ENABLED
@@ -238,6 +240,7 @@ private:
     // Global parameters are all contained within the 'g' class.
     Parameters g;
     ParametersG2 g2;
+    ACRLctrl acrlctrl;
 
     // used to detect MAVLink acks from GCS to stop compassmot
     uint8_t command_ack_counter;

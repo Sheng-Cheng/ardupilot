@@ -13,8 +13,6 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "Copter.h"
-
 #include "ACRLctrl.h"
 
 /*
@@ -38,7 +36,7 @@ const AP_Param::GroupInfo ACRLctrl::var_info[] = {
     // @Units: m
     // @Range: 0 - 2
     // @User: Advanced
-    AP_GROUPINFO("CIRCRADIUSX", 2, ParametersG2, circRadiusX, CIRCRADIUSX_DEFAULT),
+    AP_GROUPINFO("CIRCRADIUSX", 2, ACRLctrl, circRadiusX, CIRCRADIUSX_DEFAULT),
 
     // @Param: CIRCRADIUSY
     // @DisplayName: Y radius
@@ -46,7 +44,7 @@ const AP_Param::GroupInfo ACRLctrl::var_info[] = {
     // @Units: m
     // @Range: 0 - 2
     // @User: Advanced
-    AP_GROUPINFO("CIRCRADIUSY", 3, ParametersG2, circRadiusY, CIRCRADIUSY_DEFAULT),
+    AP_GROUPINFO("CIRCRADIUSY", 3, ACRLctrl, circRadiusY, CIRCRADIUSY_DEFAULT),
 
     // @Param: TRAJINDEX
     // @DisplayName: Trajectory index
@@ -54,7 +52,7 @@ const AP_Param::GroupInfo ACRLctrl::var_info[] = {
     // @Units: integers
     // @Range: 0 - 10
     // @User: Advanced
-    AP_GROUPINFO("TRAJINDEX", 4, ParametersG2, trajIndex, TRAJINDEX_DEFAULT),
+    AP_GROUPINFO("TRAJINDEX", 4, ACRLctrl, trajIndex, TRAJINDEX_DEFAULT),
 
     // @Param: L1ENABLE
     // @DisplayName: L1 enable
@@ -70,7 +68,7 @@ const AP_Param::GroupInfo ACRLctrl::var_info[] = {
     // @Units: integers
     // @Values: 0:None,1:Land
     // @User: Advanced
-    AP_GROUPINFO("LANDFLAG", 6, ParametersG2, LandFlag, LANDFLAG_DEFAULT),
+    AP_GROUPINFO("LANDFLAG", 6, ACRLctrl, LandFlag, LANDFLAG_DEFAULT),
 
     // @Param: ASV
     // @DisplayName: As velocity
@@ -212,7 +210,6 @@ const AP_Param::GroupInfo ACRLctrl::var_info[] = {
 };
 
 ACRLctrl::ACRLctrl(void)
-    : temp_calibration() // this doesn't actually need constructing, but removing it here is problematic syntax-wise
 {
     AP_Param::setup_object_defaults(this, var_info);
 }

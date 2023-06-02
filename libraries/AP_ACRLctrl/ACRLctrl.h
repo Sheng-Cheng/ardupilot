@@ -14,7 +14,7 @@
  */
 #pragma once
 
-#include "Copter.h"
+#include "../ArduCopter/Copter.h"
 
 /*
     This file contains the self-defined parameters for ARCL controls.
