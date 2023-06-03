@@ -56,9 +56,9 @@ bool ModeAdaptive::init(bool ignore_checks)
     lpf1_prev = lpf1_prev * 0; // initialize lpf1_prev
     lpf2_prev = lpf2_prev * 0; // initialize lpf2_prev
 
-    trajIndex = g2.trajIndex; // fix the trajectory
-    radiusX = g2.circRadiusX; // circle radius or figure8's x radius
-    radiusY = g2.circRadiusY; // figure8's y radius (not used for circle radius)
+    trajIndex = g.trajIndex; // fix the trajectory
+    radiusX = g.circRadiusX; // circle radius or figure8's x radius
+    radiusY = g.circRadiusY; // figure8's y radius (not used for circle radius)
 
     targetSpeed = g.circSpeed; // final tangent speed is read from the parameter circSpeed
 
@@ -227,14 +227,14 @@ void ModeAdaptive::run()
     }
 
     // initialize for landing mode
-    if (g2.LandFlag && !landingTriggered) 
+    if (g.LandFlag && !landingTriggered) 
     {
         landingTriggered = 1; // set landingTriggered to 1
         landingTimeOffset = timeInThisRun; // store the time offset
     }
 
     // executing landing mode
-    if (g2.LandFlag && landingTriggered) // switch to landing mode
+    if (g.LandFlag && landingTriggered) // switch to landing mode
     {   
         if(ahrs.get_relative_position_NED_origin(currentPosition)){;}// save current position
         if(ahrs.get_velocity_NED(currentVelocity)){;}
@@ -258,7 +258,7 @@ void ModeAdaptive::run()
     thrustMomentCmd = geometricController(targetPos, targetVel, targetAcc, targetJerk, targetSnap, targetYaw, targetYaw_dot, targetYaw_ddot); // only support constant yaw
 
     uint8_t LandFlag = 0;
-    LandFlag = g2.LandFlag;
+    LandFlag = g.LandFlag;
     AP::logger().Write("L1AB", "thrust,mx,my,mz,landflag,landtrig,landcomp", "ffffBBB",
                        (double)thrustMomentCmd[0],
                        (double)thrustMomentCmd[1],

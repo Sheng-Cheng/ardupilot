@@ -342,8 +342,24 @@
  #define CTOFFQ2MOMENT_DEFAULT          2.0
 #endif
 
-#ifndef CIRCSPEED
+#ifndef CIRCSPEED_DEFAULT
  #define CIRCSPEED_DEFAULT          0.3
+#endif
+
+#ifndef CIRCRADIUSX_DEFAULT
+ #define CIRCRADIUSX_DEFAULT          2.0
+#endif
+
+#ifndef CIRCRADIUSY_DEFAULT
+ #define CIRCRADIUSY_DEFAULT          1.0
+#endif
+
+#ifndef TRAJINDEX_DEFAULT
+ #define TRAJINDEX_DEFAULT          0.0
+#endif
+
+#ifndef LANDFLAG_DEFAULT
+ #define LANDFLAG_DEFAULT          0.0
 #endif
 
 #elif REAL_OR_SITL
@@ -420,8 +436,24 @@
  #define CTOFFQ2MOMENT_DEFAULT          15.0
 #endif
 
-#ifndef CIRCSPEED
+#ifndef CIRCSPEED_DEFAULT
  #define CIRCSPEED_DEFAULT          0.0
+#endif
+
+#ifndef CIRCRADIUSX_DEFAULT
+ #define CIRCRADIUSX_DEFAULT          2.0
+#endif
+
+#ifndef CIRCRADIUSY_DEFAULT
+ #define CIRCRADIUSY_DEFAULT          1.0
+#endif
+
+#ifndef TRAJINDEX_DEFAULT
+ #define TRAJINDEX_DEFAULT          0.0
+#endif
+
+#ifndef LANDFLAG_DEFAULT
+ #define LANDFLAG_DEFAULT          0.0
 #endif
 #endif
 

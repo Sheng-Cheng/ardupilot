@@ -540,13 +540,6 @@ const AP_Param::Info Copter::var_info[] = {
     // @Range: 0 or 1
     // @User: Advanced
     GSCALAR(l1enable, "L1ENABLE", L1ENABLE_DEFAULT),
-    // // @Param: cutoffFreq [obsolete]
-    // // @DisplayName: cutoff frequency
-    // // @Description: cutoff frequency for the LPF in the L1 adaptive controller (in rad/s)
-    // // @Units: none
-    // // @Range:0 - 100000
-    // // @User: Advanced
-    // // GSCALAR(cutoffFreq, "CUTOFFFREQ", CUTOFFFREQ_DEFAULT),
 
     // @Param: Asv
     // @DisplayName: As for the velocity state
@@ -576,13 +569,6 @@ const AP_Param::Info Copter::var_info[] = {
     // @Range:0 - 100000
     // @User: Advanced
     GSCALAR(ctoffq1Moment, "CTOFFQ1MOMENT", CTOFFQ1MOMENT_DEFAULT),
-    // // @Param: cutoffFreq2Thrust
-    // // @DisplayName: LPF2's cutoff frequency on the thrust channel
-    // // @Description: LPF2's cutoff frequency on the thrust channel in the L1 adaptive controller (rad/s)
-    // // @Units: none
-    // // @Range:0 - 100000
-    // // @User: Advanced
-    // GSCALAR(cutoffFreq2Thrust, "CUTOFFFREQ2THRUST", CUTOFFFREQ2THRUST_DEFAULT),
     // @Param: ctoffq2Moment
     // @DisplayName: LPF2's cutoff frequency on the moment channels
     // @Description: LPF2's cutoff frequency on the moment channels in the L1 adaptive controller (rad/s)
@@ -597,6 +583,35 @@ const AP_Param::Info Copter::var_info[] = {
     // @Range:0 - 100000
     // @User: Advanced
     GSCALAR(circSpeed, "CIRCSPEED", CIRCSPEED_DEFAULT),
+
+    // @Param: CIRCRADIUSX
+    // @DisplayName: circle radius or figure8's x radius
+    // @Description: circle radius or figure8's x radius
+    // @Units: m
+    // @Range: 0 2
+    // @User: Advanced
+    GSCALAR(circRadiusX, "CIRCRADIUSX", CIRCRADIUSX_DEFAULT),
+    // @Param: CIRCRADIUSY
+    // @DisplayName: figure8's y radius (not used for circle radius)
+    // @Description: figure8's y radius (not used for circle radius)
+    // @Units: m
+    // @Range: 0 2
+    // @User: Advanced
+    GSCALAR(circRadiusY, "CIRCRADIUSY", CIRCRADIUSY_DEFAULT),
+    // @Param: TRAJINDEX
+    // @DisplayName: index of the trajectory to run
+    // @Description: index of the trajectory to run
+    // @Units: integers
+    // @Range: 0 127
+    // @User: Advanced
+    GSCALAR(trajIndex, "TRAJINDEX", TRAJINDEX_DEFAULT),
+    // @Param: LANDFLAG
+    // @DisplayName: flag of landing 
+    // @Description: 0 to keep current state, 1 to land
+    // @Units: integers
+    // @Range: 0 1
+    // @User: Advanced
+    GSCALAR(LandFlag, "LANDFLAG", LANDFLAG_DEFAULT),
 #endif
 
     // ACRO_RP_EXPO moved to Command Model class
@@ -1329,37 +1344,6 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
 
     // ID 62 is reserved for the SHOW_... parameters from the Skybrush fork at
     // https://github.com/skybrush-io/ardupilot
-
-#if MODE_ADAPTIVE_ENABLED == ENABLED
-    // @Param: CIRCRADIUSX
-    // @DisplayName: circle radius or figure8's x radius
-    // @Description: circle radius or figure8's x radius
-    // @Units: m
-    // @Range: 0 2
-    // @User: Advanced
-    AP_GROUPINFO("CIRCRADIUSX", 63, ParametersG2, circRadiusX, 2.0),
-    // @Param: CIRCRADIUSY
-    // @DisplayName: figure8's y radius (not used for circle radius)
-    // @Description: figure8's y radius (not used for circle radius)
-    // @Units: m
-    // @Range: 0 2
-    // @User: Advanced
-    AP_GROUPINFO("CIRCRADIUSY", 64, ParametersG2, circRadiusY, 1.0),
-    // @Param: TRAJINDEX
-    // @DisplayName: index of the trajectory to run
-    // @Description: radius for ACRL circular trajectories
-    // @Units: integers
-    // @Range: 0 127
-    // @User: Advanced
-    AP_GROUPINFO("TRAJINDEX", 65, ParametersG2, trajIndex, 0),
-    // @Param: LANDFLAG
-    // @DisplayName: flag of landing 
-    // @Description: 0 to keep current state, 1 to land
-    // @Units: integers
-    // @Range: 0 1
-    // @User: Advanced
-    AP_GROUPINFO("LANDFLAG", 66, ParametersG2, LandFlag, 0),
-#endif
 
     AP_GROUPEND
 };

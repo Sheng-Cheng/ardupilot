@@ -384,7 +384,7 @@ public:
 
         k_param_vehicle = 257, // vehicle common block of parameters
 
-        // L1 adaptive controller
+        // ACRL: L1 adaptive controller
         k_param_Asv = 258,         // As for the velocity state
         k_param_Asomega,           // As for the rotational velocity state
         k_param_ctoffq1Thrust,     // LPF1's cutoff frequency for thrust channel
@@ -393,7 +393,7 @@ public:
         k_param_circSpeed,         // circulating speed of the circular trajectory
         k_param_l1enable = 264,    // enable switch for L1 adaptive controller
 
-        // Geometric controller
+        // ACRL: Geometric controller
         // position P term
         k_param_GeoCtrl_Kpx = 265, // kpx for geometric controller
         k_param_GeoCtrl_Kpy,       // kpy for geometric controller
@@ -410,6 +410,12 @@ public:
         k_param_GeoCtrl_KOx,       // kOmegax for geometric controller
         k_param_GeoCtrl_KOy,       // kOmegay for geometric controller
         k_param_GeoCtrl_KOz = 276, // kOmegaz for geometric controller
+
+        // ACRL: Other parameters
+        k_param_circRadiusX = 277, // circle radius or figure8's x radius
+        k_param_circRadiusY,       // figure8's y radius (not used for circle radius)
+        k_param_trajIndex,         // index of the trajectory to run
+        k_param_LandFlag = 280,    // flag of landing 
 
         // the k_param_* space is 9-bits in size
         // 511: reserved
@@ -511,6 +517,12 @@ public:
     AP_Float GeoCtrl_KOx; // kOmegax for geometric controller
     AP_Float GeoCtrl_KOy; // kOmegay for geometric controller
     AP_Float GeoCtrl_KOz; // kOmegaz for geometric controller
+
+    // Other parameters
+    AP_Float circRadiusX; // circle radius or figure8's x radius
+    AP_Float circRadiusY; // figure8's y radius (not used for circle radius)
+    AP_Int8 trajIndex;    // index of the trajectory to run
+    AP_Int8 LandFlag;     // flag of landing 
 
 #if MODE_THROW_ENABLED == ENABLED
     AP_Enum<ModeThrow::PreThrowMotorState>         throw_motor_start;
@@ -720,14 +732,6 @@ public:
 
 #if MODE_GUIDED_ENABLED == ENABLED
     AP_Float guided_timeout;
-#endif
-
-// parameters for the ACRL trajectories 
-#if MODE_ADAPTIVE_ENABLED == ENABLED
-    AP_Float circRadiusX; // circle radius or figure8's x radius
-    AP_Float circRadiusY; // figure8's y radius (not used for circle radius)
-    AP_Int8 trajIndex; // index of the trajectory to run
-    AP_Int8 LandFlag; // flag of landing
 #endif
 
     AP_Int8                 surftrak_mode;
