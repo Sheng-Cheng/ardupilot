@@ -1125,6 +1125,19 @@ void GCS_MAVLINK_Copter::handleMessage(const mavlink_message_t &msg)
 #endif
 
     switch (msg.msgid) {
+    //used to handle ODROID OUTPUT 
+    case MAVLINK_MSG_ID_ODROIDOUTPUT:          //MAV ID:389
+    {
+        mavlink_odroidoutput_t packet;
+        mavlink_msg_odroidoutput_decode(&msg, &packet);
+        //print statement for testing
+        gcs().send_text(MAV_SEVERITY_INFO, "TOTAL THRUST: %f", packet.total_thrust);
+        gcs().send_text(MAV_SEVERITY_INFO, "MOMENT X: %f", packet.moment_x);
+        gcs().send_text(MAV_SEVERITY_INFO, "MOMENT Y: %f", packet.moment_y);
+        gcs().send_text(MAV_SEVERITY_INFO, "MOMENT Z: %f", packet.moment_z);
+        break;
+    }
+
 
 #if MODE_GUIDED_ENABLED == ENABLED
     case MAVLINK_MSG_ID_SET_ATTITUDE_TARGET:   // MAV ID: 82
