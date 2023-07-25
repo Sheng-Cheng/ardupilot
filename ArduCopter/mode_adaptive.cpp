@@ -24,20 +24,16 @@
 bool ModeAdaptive::init(bool ignore_checks)
 {
     motorEnable = 1; // whether to raise motor PWM
-    landingComplete = 0; 
 
     if (ahrs.have_inertial_nav())
     {
         if(ahrs.get_velocity_NED(v_hat_prev)){;} // state predictor value of translational speed
-        v_prev = v_hat_prev;               // initialize the previous velocity in the same way
     }
     else
     {
         gcs().send_text(MAV_SEVERITY_CRITICAL, "Inertial navigation is inactive upon entering adaptive mode.");
         motorEnable = 0; // if the velocity is unavailable, disable the flight.
     }
-    omega_hat_prev = AP::ahrs().get_gyro(); // state predictor value of rotational speed
-    omega_prev = omega_hat_prev;
 
     Vector3f dummyPosition;
     int locAvailable = ahrs.get_relative_position_NED_origin(dummyPosition);
@@ -47,22 +43,11 @@ bool ModeAdaptive::init(bool ignore_checks)
         motorEnable = 0; // if the location is unavailable, disable the flight.
     }
 
-    // initialize rotation matrix
-    Quaternion q;
-    q.rotation_matrix(R_prev); // transforming the quaternion q to rotation matrix R
-
-    u_b_prev = u_b_prev * 0;   // initialize u_baseline
-    u_ad_prev = u_ad_prev * 0; // initialize u_ad
-    lpf1_prev = lpf1_prev * 0; // initialize lpf1_prev
-    lpf2_prev = lpf2_prev * 0; // initialize lpf2_prev
-
-    trajIndex = g.trajIndex; // fix the trajectory
-    radiusX = g.circRadiusX; // circle radius or figure8's x radius
-    radiusY = g.circRadiusY; // figure8's y radius (not used for circle radius)
-
-    targetSpeed = g.circSpeed; // final tangent speed is read from the parameter circSpeed
-
-    landingTriggered = 0; // set the indicator to 0  
+    // Initial the receiver of ROS messages
+    odroidmsgs.total_thrust = 0;
+    odroidmsgs.moment_x = 0;
+    odroidmsgs.moment_y = 0;
+    odroidmsgs.moment_z = 0;
 
     gcs().send_text(MAV_SEVERITY_INFO, "Adpative mode initialization is done.");
     return true;
@@ -144,142 +129,54 @@ void ModeAdaptive::run()
         }
     }
 
-    Vector3f targetPos;
-    Vector3f targetVel;
-    Vector3f targetAcc;
-    Vector3f targetJerk;
-    Vector3f targetSnap;
-    Vector2f targetYaw;
-    Vector2f targetYaw_dot;
-    Vector2f targetYaw_ddot;
+    // // test mavros send/receive
+    // Vector3f xsend;
+    // Vector3f vsend;
+    // Matrix3f Rsend;
+    // Vector3f Wsend;
+    // float yawsend;
+    // Quaternion qtest;
 
-    // evaluate trajectories
-    if (timeInThisRun < 2)
-    {
-        // takeoff from (x,y,z) = (0,0,0) to (0,0,-1) in 2 secondss
-        ACRL_trajectory_takeoff(timeInThisRun, &targetPos, &targetVel, &targetAcc, &targetJerk, &targetSnap, &targetYaw, &targetYaw_dot, &targetYaw_ddot);
-    }
-    else
-    {
-        switch (trajIndex)
-        {
-        case 1: // circular trajectory with variable yaw 
-        {   
-            #if (!REAL_OR_SITL) // SITL
-                const float timeOffset = 2;
-                ACRL_trajectory_circle_variable_yaw(timeInThisRun, radiusX, timeOffset, targetSpeed, &targetPos, &targetVel, &targetAcc, &targetJerk, &targetSnap, &targetYaw, &targetYaw_dot, &targetYaw_ddot);
-            #elif (REAL_OR_SITL) // Real 
-            if (timeInThisRun >= 2 && timeInThisRun < 4)
-            {
-                // transition from (0,0,-1) to (0,-radiusX,-1) in 2 seconds
-                const float timeOffset = 2;
-                ACRL_trajectory_transition_to_start(timeInThisRun, radiusX, timeOffset, &targetPos, &targetVel, &targetAcc, &targetJerk, &targetSnap, &targetYaw, &targetYaw_dot, &targetYaw_ddot);
-            }
-            else if (timeInThisRun >= 4)
-            {   
-                // start the circle trajectory
-                const float timeOffset = 4;
-                ACRL_trajectory_circle_variable_yaw(timeInThisRun, radiusX, timeOffset, targetSpeed, &targetPos, &targetVel, &targetAcc, &targetJerk, &targetSnap, &targetYaw, &targetYaw_dot, &targetYaw_ddot);
-            }
-            #endif
-            break;
-        }
-        case 2: // circular trajectory with fixed yaw 
-        {
-            #if (!REAL_OR_SITL) // SITL
-                const float timeOffset = 2;
-                ACRL_trajectory_circle_fixed_yaw(timeInThisRun, radiusX, timeOffset, targetSpeed, &targetPos, &targetVel, &targetAcc, &targetJerk, &targetSnap, &targetYaw, &targetYaw_dot, &targetYaw_ddot);
-            #elif (REAL_OR_SITL) // Real 
-            if (timeInThisRun >= 2 && timeInThisRun < 4)
-            {
-                // transition from (0,0,-1) to (0,-radiusX,-1) in 2 seconds
-                const float timeOffset = 2;
-                ACRL_trajectory_transition_to_start(timeInThisRun, radiusX, timeOffset, &targetPos, &targetVel, &targetAcc, &targetJerk, &targetSnap, &targetYaw, &targetYaw_dot, &targetYaw_ddot);
-            }
-            else if (timeInThisRun >= 4)
-            {   
-                // start the circle trajectory
-                const float timeOffset = 4;
-                ACRL_trajectory_circle_fixed_yaw(timeInThisRun, radiusX, timeOffset, targetSpeed, &targetPos, &targetVel, &targetAcc, &targetJerk, &targetSnap, &targetYaw, &targetYaw_dot, &targetYaw_ddot);
-            }
-            #endif
-            break;
-        }
-        case 3: // figure8 trajectory with fixed yaw 
-        {
-            ACRL_trajectory_figure8_fixed_yaw(timeInThisRun, radiusX, radiusY, targetSpeed, &targetPos, &targetVel, &targetAcc, &targetJerk, &targetSnap, &targetYaw, &targetYaw_dot, &targetYaw_ddot);
-            break;
-        }
-        case 4: // cy45 add: figure8 trajectory with tilted altitude
-        {
-            ACRL_trajectory_figure8_tilted(timeInThisRun, radiusX, radiusY, targetSpeed, &targetPos, &targetVel, &targetAcc, &targetJerk, &targetSnap, &targetYaw, &targetYaw_dot, &targetYaw_ddot);
-            break;
-        }
-        default:
-        {
-            // if the case is not covered in the previous cases, then hover.
-            GCS_SEND_TEXT(MAV_SEVERITY_ERROR, "Wrong trajectory index. Drone will hover.");
-            // set targetSpeed = 0 below to enfornce hover
-            ACRL_trajectory_figure8_fixed_yaw(timeInThisRun, radiusX, radiusY, 0, &targetPos, &targetVel, &targetAcc, &targetJerk, &targetSnap, &targetYaw, &targetYaw_dot, &targetYaw_ddot);
-            break;
-        }
-        }
-    }
+    // if(ahrs.get_relative_position_NED_origin(xsend)){;}
+    // if(ahrs.get_velocity_NED(vsend)){;}
+    // ahrs.get_quat_body_to_ned(qtest);
+    // qtest.rotation_matrix(Rsend);
+    // Wsend = AP::ahrs().get_gyro();
+    // yawsend = ahrs.get_yaw();
 
-    // initialize for landing mode
-    if (g.LandFlag && !landingTriggered) 
-    {
-        landingTriggered = 1; // set landingTriggered to 1
-        landingTimeOffset = timeInThisRun; // store the time offset
-    }
-
-    // executing landing mode
-    if (g.LandFlag && landingTriggered) // switch to landing mode
-    {   
-        if(ahrs.get_relative_position_NED_origin(currentPosition)){;}// save current position
-        if(ahrs.get_velocity_NED(currentVelocity)){;}
-        currentYaw = ahrs.get_yaw(); // save current yaw
-        if (currentPosition[2] >= -0.3) // if the initial altitude upon entering land mode is within 30 cm, then set landComplete to 1 to overwrite the motor throttle to 1.
-        {   
-            if (!landingComplete)
-            {
-                landingComplete = 1;
-                gcs().send_text(MAV_SEVERITY_INFO, "Quadrotor is on the ground. Motor commands set to minimum.");
-            }       
-        }
-        else 
-        {
-            float decRate = 1; // 1m/s^2
-            landingComplete = ACRL_trajectory_land(timeInThisRun - landingTimeOffset, currentPosition, currentVelocity, currentYaw, decRate, &targetPos, &targetVel, &targetAcc, &targetJerk, &targetSnap, &targetYaw, &targetYaw_dot, &targetYaw_ddot);
-        }   
-    }
+    // gcs().send_text(MAV_SEVERITY_INFO, "ahrs send x: %f, %f, %f", xsend.x, xsend.y, xsend.z);
+    // gcs().send_text(MAV_SEVERITY_INFO, "ahrs send v: %f, %f, %f", vsend.x, vsend.y, vsend.z);
+    // gcs().send_text(MAV_SEVERITY_INFO, "ahrs send R.a: %f, %f, %f", Rsend.a.x, Rsend.a.y, Rsend.a.z);
+    // gcs().send_text(MAV_SEVERITY_INFO, "ahrs send R.b: %f, %f, %f", Rsend.b.x, Rsend.b.y, Rsend.b.z);
+    // gcs().send_text(MAV_SEVERITY_INFO, "ahrs send R.c: %f, %f, %f", Rsend.c.x, Rsend.c.y, Rsend.c.z);
+    // gcs().send_text(MAV_SEVERITY_INFO, "ahrs send W: %f, %f, %f", Wsend.x, Wsend.y, Wsend.z);
+    // gcs().send_text(MAV_SEVERITY_INFO, "ahrs send yaw: %f", yawsend);
 
     VectorN<float, 4> thrustMomentCmd;
-    thrustMomentCmd = geometricController(targetPos, targetVel, targetAcc, targetJerk, targetSnap, targetYaw, targetYaw_dot, targetYaw_ddot); // only support constant yaw
+    // getting control output from Odroid
+    thrustMomentCmd[0] = copter.mode_adaptive.odroidmsgs.total_thrust;
+    thrustMomentCmd[1] = copter.mode_adaptive.odroidmsgs.moment_x;
+    thrustMomentCmd[2] = copter.mode_adaptive.odroidmsgs.moment_y;
+    thrustMomentCmd[3] = copter.mode_adaptive.odroidmsgs.moment_z;
 
-    uint8_t LandFlag = 0;
-    LandFlag = g.LandFlag;
-    AP::logger().Write("L1AB", "thrust,mx,my,mz,landflag,landtrig,landcomp", "ffffBBB",
+    AP::logger().Write("L1AB", "copthrust,copmx,copmy,copmz,cmdthrust,cmdmx,cmdmy,cmdmz", "ffffffff",
+                        copter.mode_adaptive.odroidmsgs.total_thrust,
+                        copter.mode_adaptive.odroidmsgs.moment_x,
+                        copter.mode_adaptive.odroidmsgs.moment_y,
+                        copter.mode_adaptive.odroidmsgs.moment_z,
                        (double)thrustMomentCmd[0],
                        (double)thrustMomentCmd[1],
                        (double)thrustMomentCmd[2],
-                       (double)thrustMomentCmd[3],
-                       LandFlag,
-                       landingTriggered,
-                       landingComplete);
+                       (double)thrustMomentCmd[3]);
 
-    // L1 adaptive augmentation
-    VectorN<float, 4> L1thrustMomentCmd;
-    L1thrustMomentCmd = L1AdaptiveAugmentation(thrustMomentCmd);
-
-    // uncomment the lines below if you want to inject uncertainty to the control channels
-    // thrustMomentCmd[0] = thrustMomentCmd[0] + 5 * sinf(0.5 * currentTime);
-    // thrustMomentCmd[1] = thrustMomentCmd[1] + 0.1 * sinf( currentTime);
-    // thrustMomentCmd[2] = thrustMomentCmd[2] + 0.05 * sinf( 2 * currentTime);
+    // // uncomment the lines below if you want to inject uncertainty to the control channels
+    // // thrustMomentCmd[0] = thrustMomentCmd[0] + 5 * sinf(0.5 * currentTime);
+    // // thrustMomentCmd[1] = thrustMomentCmd[1] + 0.1 * sinf( currentTime);
+    // // thrustMomentCmd[2] = thrustMomentCmd[2] + 0.05 * sinf( 2 * currentTime);
 
     // motor mixing
     VectorN<float, 4> motorPWM;
-    motorPWM = motorMixing(thrustMomentCmd + L1thrustMomentCmd);
+    motorPWM = motorMixing(thrustMomentCmd);
 
     // motorPWM saturation
     if (motorPWM[0] < 0) {motorPWM[0] = 0;}
@@ -290,15 +187,6 @@ void ModeAdaptive::run()
     else if (motorPWM[2] > 100) {motorPWM[2] = 100;}
     if (motorPWM[3] < 0) {motorPWM[3] = 0;}
     else if (motorPWM[3] > 100) {motorPWM[3] = 100;}
-
-    // disarm the vehicle by setting PWM to 1 when landing is completed
-    if (landingComplete)
-    {
-        motorPWM[0] = 1;
-        motorPWM[1] = 1;
-        motorPWM[2] = 1;
-        motorPWM[3] = 1;
-    }
 
     if (motors->armed()) // only command the motor PWM when the vehicle is armed.
     {
@@ -323,12 +211,9 @@ void ModeAdaptive::run()
         gcs().send_text(MAV_SEVERITY_CRITICAL, "Location unavailable.");
     }
 
-    AP::logger().Write("L1AC", "currentT,thisRunT,xxd,yyd,zzd,xx,yy,zz,m1,m2,m3,m4", "ffffffffffff",
+    AP::logger().Write("L1AC", "currentT,thisRunT,xx,yy,zz,m1,m2,m3,m4", "fffffffff",
                        (double)currentTime,
                        (double)timeInThisRun,
-                       (double)targetPos.x,
-                       (double)targetPos.y,
-                       (double)targetPos.z,
                        (double)statePos.x,
                        (double)statePos.y,
                        (double)statePos.z,

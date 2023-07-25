@@ -1130,11 +1130,17 @@ void GCS_MAVLINK_Copter::handleMessage(const mavlink_message_t &msg)
     {
         mavlink_odroidoutput_t packet;
         mavlink_msg_odroidoutput_decode(&msg, &packet);
+
+        copter.mode_adaptive.odroidmsgs.total_thrust = packet.total_thrust;
+        copter.mode_adaptive.odroidmsgs.moment_x = packet.moment_x;
+        copter.mode_adaptive.odroidmsgs.moment_y = packet.moment_y;
+        copter.mode_adaptive.odroidmsgs.moment_z = packet.moment_z;
+        
         //print statement for testing
-        gcs().send_text(MAV_SEVERITY_INFO, "TOTAL THRUST: %f", packet.total_thrust);
-        gcs().send_text(MAV_SEVERITY_INFO, "MOMENT X: %f", packet.moment_x);
-        gcs().send_text(MAV_SEVERITY_INFO, "MOMENT Y: %f", packet.moment_y);
-        gcs().send_text(MAV_SEVERITY_INFO, "MOMENT Z: %f", packet.moment_z);
+        gcs().send_text(MAV_SEVERITY_INFO, "ROS TOTAL THRUST: %f", packet.total_thrust);
+        gcs().send_text(MAV_SEVERITY_INFO, "ROS MOMENT X: %f", packet.moment_x);
+        gcs().send_text(MAV_SEVERITY_INFO, "ROS MOMENT Y: %f", packet.moment_y);
+        gcs().send_text(MAV_SEVERITY_INFO, "ROS MOMENT Z: %f", packet.moment_z);
         break;
     }
 

@@ -1982,6 +1982,14 @@ public:
     float landingTimeOffset; // store the time when the land command is triggered
     uint8_t landingComplete; // indicator of whether landing is completed
 
+    // Odroid messages fron ROS
+    struct ODROIDMSGS {    
+        float total_thrust;
+        float moment_x;
+        float moment_y;
+        float moment_z;
+    }odroidmsgs;
+
 protected:
     const char *name() const override { return "ADAPTIVE"; }
     const char *name4() const override { return "ADPT"; }
