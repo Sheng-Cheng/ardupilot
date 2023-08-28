@@ -740,12 +740,15 @@ Matrix3f ModeAdaptive::hatOperator(Vector3f input)
     // const T ax, const T ay, const T az,
     // const T bx, const T by, const T bz,
     // const T cx, const T cy, const T cz
+    output.a.x = 0;
     output.a.y = -input.z;
     output.a.z = input.y;
     output.b.x = input.z;
+    output.b.y = 0;
     output.b.z = -input.x;
     output.c.x = -input.y;
     output.c.y = input.x;
+    output.c.z = 0;
 
     return output;
 }
