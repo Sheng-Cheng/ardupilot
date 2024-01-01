@@ -2008,6 +2008,7 @@ private:
     VectorN<float,9> unit_vec(Vector3f q, Vector3f q_dot, Vector3f q_ddot);
     Matrix3f hatOperator(Vector3f input);
     Vector3f veeOperator(Matrix3f input);
+    VectorN<float,4> motorMixing_indf(VectorN<float,4> thrustMomentCmd);
     VectorN<float,4> motorMixing(VectorN<float,4> thrustMomentCmd);
     VectorN<float,4> iterativeMotorMixing(VectorN<float, 4> w_input, VectorN<float, 4> thrustMomentCmd, float a_F, float b_F, float a_M, float b_M, float L, float D);
     VectorN<float,16> mat4Inv(VectorN<float,4> coefficientRow1, VectorN<float,4> coefficientRow2, VectorN<float,4> coefficientRow3, VectorN<float,4> coefficientRow4);

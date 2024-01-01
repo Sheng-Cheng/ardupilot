@@ -154,10 +154,10 @@ void ModeAdaptive::run()
 
     VectorN<float, 4> thrustMomentCmd;
     // getting control output from Odroid
-    thrustMomentCmd[0] = copter.mode_adaptive.odroidmsgs.total_thrust;
-    thrustMomentCmd[1] = copter.mode_adaptive.odroidmsgs.moment_x;
-    thrustMomentCmd[2] = copter.mode_adaptive.odroidmsgs.moment_y;
-    thrustMomentCmd[3] = copter.mode_adaptive.odroidmsgs.moment_z;
+    thrustMomentCmd[0] = copter.mode_adaptive.odroidmsgs.total_thrust; // f1 from mpc
+    thrustMomentCmd[1] = copter.mode_adaptive.odroidmsgs.moment_x; // f2 from mpc
+    thrustMomentCmd[2] = copter.mode_adaptive.odroidmsgs.moment_y; // f3 from mpc
+    thrustMomentCmd[3] = copter.mode_adaptive.odroidmsgs.moment_z; // f4 from mpc
 
     AP::logger().Write("L1AB", "copthrust,copmx,copmy,copmz,cmdthrust,cmdmx,cmdmy,cmdmz", "ffffffff",
                         copter.mode_adaptive.odroidmsgs.total_thrust,
@@ -176,7 +176,7 @@ void ModeAdaptive::run()
 
     // motor mixing
     VectorN<float, 4> motorPWM;
-    motorPWM = motorMixing(thrustMomentCmd);
+    motorPWM = motorMixing_indf(thrustMomentCmd); // motor mixing with individule motor thrust, instead of fM.
 
     // calculate individule motor thrust for comparison
     // for iterative motor mixing, it is hard to get the individual motor thrust
@@ -672,24 +672,68 @@ Vector3f ModeAdaptive::veeOperator(Matrix3f input)
     return output;
 }
 
+VectorN<float, 4> ModeAdaptive::motorMixing_indf(VectorN<float, 4> thrustMomentCmd)
+{
+    // this function calculate the motor PWM for individual motor thrust
+    VectorN<float, 4> w;
+    #if (!REAL_OR_SITL)       // SITL
+        const float a_F = 0.0014597;
+        const float b_F = 0.043693;
+    #elif (REAL_OR_SITL) // parameters for real drone
+        const float a_F = 0.0009251;
+        const float b_F = 0.021145;
+    #endif
+
+    // first calculate motor speed
+    float f1, f2, f3, f4;
+    f1 = thrustMomentCmd[0];
+    f2 = thrustMomentCmd[1];
+    f3 = thrustMomentCmd[2];
+    f4 = thrustMomentCmd[3];
+    
+    // then use the curve
+    w[0] = (-b_F+sqrtf(b_F*b_F+4*a_F*f1))/(2*a_F);
+    if (f1<0)
+    {
+        w[0] = 0;
+    }
+    w[1] = (-b_F+sqrtf(b_F*b_F+4*a_F*f2))/(2*a_F);
+    if (f2<0)
+    {
+        w[1] = 0;
+    }
+    w[2] = (-b_F+sqrtf(b_F*b_F+4*a_F*f3))/(2*a_F);
+    if (f3<0)
+    {
+        w[2] = 0;
+    }
+    w[3] = (-b_F+sqrtf(b_F*b_F+4*a_F*f4))/(2*a_F);
+    if (f4<0)
+    {
+        w[3] = 0;
+    }
+
+    return w;
+}
+
 VectorN<float, 4> ModeAdaptive::motorMixing(VectorN<float, 4> thrustMomentCmd)
 {
     VectorN<float, 4> w;
-#if (!REAL_OR_SITL)       // SITL
-    const float L = 0.25; // for x layout
-    const float D = 0.25;
-    const float a_F = 0.0014597;
-    const float b_F = 0.043693;
-    const float a_M = 0.000011667;
-    const float b_M = 0.0059137;
-#elif (REAL_OR_SITL) // parameters for real drone
-    const float L = 0.175; // longer distance between adjacent motors
-    const float D = 0.131; // shorter distance between adjacent motors
-    const float a_F = 0.0009251;
-    const float b_F = 0.021145;
-    const float a_M = 0.00001211;
-    const float b_M = 0.0009864;
-#endif
+    #if (!REAL_OR_SITL)       // SITL
+        const float L = 0.25; // for x layout
+        const float D = 0.25;
+        const float a_F = 0.0014597;
+        const float b_F = 0.043693;
+        const float a_M = 0.000011667;
+        const float b_M = 0.0059137;
+    #elif (REAL_OR_SITL) // parameters for real drone
+        const float L = 0.175; // longer distance between adjacent motors
+        const float D = 0.131; // shorter distance between adjacent motors
+        const float a_F = 0.0009251;
+        const float b_F = 0.021145;
+        const float a_M = 0.00001211;
+        const float b_M = 0.0009864;
+    #endif
 
     // solve for linearizing point
     float w0 = (-b_F + sqrtF(b_F * b_F + a_F * thrustMomentCmd[0])) / 2 / a_F;
