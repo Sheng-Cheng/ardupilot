@@ -178,6 +178,22 @@ void ModeAdaptive::run()
     VectorN<float, 4> motorPWM;
     motorPWM = motorMixing(thrustMomentCmd);
 
+    // calculate individule motor thrust for comparison
+    // for iterative motor mixing, it is hard to get the individual motor thrust
+    // so we calculate it here from the motor PWM
+    VectorN<float, 4> motorThrust;
+    #if (!REAL_OR_SITL)       // SITL
+        const float a_F = 0.0014597;
+        const float b_F = 0.043693;
+    #elif (REAL_OR_SITL) // parameters for real drone
+        const float a_F = 0.0009251;
+        const float b_F = 0.021145;
+    #endif
+    motorThrust[0] = motorPWM[0] * motorPWM[0] * a_F + motorPWM[0] * b_F;
+    motorThrust[1] = motorPWM[1] * motorPWM[1] * a_F + motorPWM[1] * b_F;
+    motorThrust[2] = motorPWM[2] * motorPWM[2] * a_F + motorPWM[2] * b_F;
+    motorThrust[3] = motorPWM[3] * motorPWM[3] * a_F + motorPWM[3] * b_F;
+
     // motorPWM saturation
     if (motorPWM[0] < 0) {motorPWM[0] = 0;}
     else if (motorPWM[0] > 100) {motorPWM[0] = 100;}
@@ -211,7 +227,7 @@ void ModeAdaptive::run()
         gcs().send_text(MAV_SEVERITY_CRITICAL, "Location unavailable.");
     }
 
-    AP::logger().Write("L1AC", "currentT,thisRunT,xx,yy,zz,m1,m2,m3,m4", "fffffffff",
+    AP::logger().Write("L1AC", "currentT,thisRunT,xx,yy,zz,m1,m2,m3,m4,f1,f2,f3,f4", "fffffffffffff",
                        (double)currentTime,
                        (double)timeInThisRun,
                        (double)statePos.x,
@@ -220,7 +236,11 @@ void ModeAdaptive::run()
                        (double)motorPWM[0],
                        (double)motorPWM[1],
                        (double)motorPWM[2],
-                       (double)motorPWM[3]);
+                       (double)motorPWM[3],
+                       (double)motorThrust[0],
+                       (double)motorThrust[1],
+                       (double)motorThrust[2],
+                       (double)motorThrust[3]);
     // end custom code by ACRL
     // ===================================================
 }
